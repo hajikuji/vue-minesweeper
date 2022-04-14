@@ -1,15 +1,8 @@
 <script setup lang="ts">
-interface BlockState {
-  x: number;
-  y: number;
-  revealed: boolean;
-  mine?: boolean;
-  flaged?: boolean;
-  adjacentMines: number;
-}
-const WIDTH = 10;
-const HEIGHT = 10;
-const state = reactive(
+import {BlockState} from '~/type'
+const WIDTH = 5;
+const HEIGHT = 5;
+const state = ref(
   Array.from({ length: HEIGHT }, (_, y) =>
     Array.from(
       { length: WIDTH },
@@ -19,7 +12,7 @@ const state = reactive(
 );
 
 function generateMines(initial: BlockState) {
-  for (const row of state) {
+  for (const row of state.value) {
     for (const block of row) {
       if (Math.abs(initial.x - block.x) <= 1) {
         continue;
@@ -57,7 +50,7 @@ const numberColors = [
 ];
 
 function updateNumbers() {
-  state.forEach((row, y) => {
+  state.value.forEach((row, y) => {
     row.forEach((block, x) => {
       if (block.mine) {
         return;
@@ -80,15 +73,15 @@ function getSiblings(block: BlockState) {
       if (x2 < 0 || x2 >= WIDTH || y2 < 0 || y2 >= HEIGHT) {
         return undefined;
       }
-      const block2 = state[y2][x2];
+      const block2 = state.value[y2][x2];
       return block2;
     })
     .filter(Boolean) as BlockState[];
 }
 
 function getBlockClass(block: BlockState) {
-  if (!block.revealed) {
-    return "bg-gray-500/10";
+  if (!block.revealed && !block.flaged) {
+    return "bg-gray-500/10 hover:bg-gray/50";
   }
   return block.mine ? "text-red" : numberColors[block.adjacentMines];
 }
@@ -108,6 +101,13 @@ function expendZero(block: BlockState) {
 let mineGenerated = false;
 let dev = true;
 
+function onRightClick(block:BlockState) {
+  if(block.revealed) {
+    return
+  }
+  block.flaged = !block.flaged
+}
+
 function onClick(block: BlockState) {
   if (!mineGenerated) {
     generateMines(block);
@@ -119,6 +119,18 @@ function onClick(block: BlockState) {
   }
   expendZero(block);
 }
+
+function checkGameState() {
+  const blocks = state.value.flat()
+if(blocks.every(block=>block.revealed || block.flaged)){
+  if(blocks.some(block=> block.flaged && !block.mine)) {
+    alert('you cheat!')
+  } else {
+    alert('you win')
+  }
+}
+}
+watchEffect(checkGameState)
 </script>
 
 <template>
@@ -132,15 +144,18 @@ function onClick(block: BlockState) {
           :key="item"
           w-10
           h-10
-          hover="bg-gray/50"
           :class="getBlockClass(item)"
+          @contextmenu.prevent="onRightClick(item)"
           @click="onClick(item)"
           border="1 gray-400/50"
           flex
           items-center
           justify-center
         >
-          <template v-if="item.revealed || dev">
+        <template v-if="item.flaged">
+          <div>棋子</div>
+        </template>
+          <template v-else-if="item.revealed || dev">
             <div v-if="item.mine">x</div>
             <div v-else>{{ item.adjacentMines }}</div>
           </template>
