@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {BlockState} from '~/type'
+import type{BlockState} from '~/type'
 const WIDTH = 5;
 const HEIGHT = 5;
 const state = ref(
@@ -99,7 +99,7 @@ function expendZero(block: BlockState) {
 }
 
 let mineGenerated = false;
-let dev = true;
+let dev = false;
 
 function onRightClick(block:BlockState) {
   if(block.revealed) {
